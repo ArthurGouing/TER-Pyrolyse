@@ -1,3 +1,3 @@
 # TER
 Test Zoubira
-test Arthu
+test Arthur
