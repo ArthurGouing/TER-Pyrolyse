@@ -1,4 +1,6 @@
-#include<iosteam>
+#include<iosrteam>
+using namespace std;
+
 
 int main()
 {
