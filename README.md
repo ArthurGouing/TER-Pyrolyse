@@ -11,6 +11,6 @@ Unpasdetemps()
 -reviens à ecrire A avec les CL
 
 Resolution()
--on resoud les equations d avant : coder des solveurs de matrices
+-on resout les equations d'avant : coder des solveurs de matrices
 
 Ecrire_dans_fichier()
