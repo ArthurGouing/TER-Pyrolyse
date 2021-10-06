@@ -1,8 +1,9 @@
-#include<iosrteam>
+#include <iostream>
 using namespace std;
 
 
 int main()
 {
- return 0 
+    cout<<"dina"<<endl;
+    return 0;
 }
