@@ -4,6 +4,6 @@ using namespace std;
 
 int main()
 {
-    cout<<"dina"<<endl;
+    cout<<"dilan"<<endl;
     return 0;
 }
