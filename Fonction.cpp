@@ -13,7 +13,7 @@ using namespace std;
 
 
 
-/*      FONCTION D ECRITURE DANS UN FICHIER     */
+/*      FONCTION D ECRITURE DANS UN FICHIER   ( PAS TESTER )  */
 
 
 //Sauvegarde dans un fichier l'ensemble des cellules pour un instant donné
@@ -22,27 +22,33 @@ string Sauvegarde_tout_le_maillage(string name)
   ofstream flux;
   string a("Resultat/"+name+".dat");
   flux.open(a); // il faut fermer le flulx ?
-  for (size_t i = 0; i < T.size(); i++)  // T en argument ou pas besoin ?
+  for (init i = 0; i < T.size(); i++)  // T en argument ou pas besoin ?
   {
-    flux << pos(x) << pos(y) << T(x,y) << endl; //avec un splot, ou map 2D (cas 2D)
+    if (i%Nx == 0)
+    {
+      flux << endl; // il faut sauter une ligne quand on change de lignes pour splot
+    }
+    flux << /*x : reste de la division i/nx*/ i%Nx << " " << /*y : partie entière de i/ny*/ i/Ny << " "<< T(i) << endl;
+
   }
   return a
 }
 
 //Sauvegarde dans un fichier les cellules qui sont sur la colonne k pour un instant donné
-string Sauvegarde_colonne(string name, init k)
+string Sauvegarde_colonne(string name, init k) // utilise T, Nx et Ny
 {
   ofstream flux;
   string a("Resultat/"+name+".dat");
   flux.open(a); // il faut fermer le flulx ?
-  for (i = 0; i < T.size(); i++)
+  for (init i = 0; i < Ny; i++) // on parcour la colonne k du maillage // verif les derrnier terms
   {
-    flux << pos(y) << T(k,y) << endl; // plot classique de  courbe (cas 1D)
+    flux << i << " " << T(k + Nx*i) << endl; // T=(k,i)
   }
   return a;
 }
 
-void Fichier_Gnuplot(sting cas)
+// Créé un fichier de command gnuplot qui affiche la fonction name
+void Fichier_Gnuplot(string name ,string cas, int smooth) // cas = "1D" ou "2D"
 {
   ofstream flux;
   flux.open("CommandGnuplot.txt")
@@ -51,39 +57,54 @@ void Fichier_Gnuplot(sting cas)
     switch (cas)
     {
       case "1D":
-      flux << "" << endl;
+
+      flux << "set title 'Titre'" << endl;
+      flux << "set xlabel 'Position y'" << endl;
+      flux << "set ylabel 'Température'" << endl;
+      flux << "plot '"+name+"' using 1:2 with lines" << endl; // plot classique de  courbe (cas 1D)
       break;
 
       case "2D":
-      flux << "" << endl;
+      flux << "set view map" << endl; //avec un splot, ou map 2D (cas 2D).
+      flux << "set title 'Titre'" << endl;
+      flux << "set xlabel 'Position x'" << endl;
+      flux << "set ylabel 'Position y'" << endl;
+      flux << "set palette rgbformulae 22,13,-31" << endl;
+      if (Smooth == 1)
+      {
+        flux << "set pm3d map interpolate 0,0" << endl;
+      }
+      else
+      {
+        flux << "set pm3d map" << endl;
+      }
+      flux << "plot'"+name+"' with image " << endl;
       break;
     }
   }
 }
-// NOTE :(normalement la forme des fonctions y est,
-// il faut juste remplir les ce qu il faut dans les flux)
+// T(x,y) = T(x + Nx*y)
 
 
 
 
+// INITIALISATION ET REMPLISSAGE DE A + UN PAS DE TEMPS
 
-// INITIALISATION ET REMPLISSAGE DE A + UN PAS DE TEMPS 
 
-
-int Nx(3),Ny(4), i, j; // Nx: nombre de colonnes , Ny: nombre de lignes 
-double dx=2., dy=3., dt=1, K=1.; // valeurs simples choisies pour tester le remplissage de A 
+int Nx(3),Ny(4), i, j; // Nx: nombre de colonnes , Ny: nombre de lignes
+double dx=2., dy=3., dt=1, K=1.; // valeurs simples choisies pour tester le remplissage de A
 vector<vector<double>> A(12, vector<double>(12,0.0));
 
-void un_pas_de_temps(vector<double> Tn,vector<vector<double>> A, double (&phi)(double), double tn,  double dx, double dy,double dt); 
-void remplissageA(vector<vector<double>>& A,double dx,double dy,double dt, int Nx, int Ny); 
+void un_pas_de_temps(vector<double> Tn,vector<vector<double>> A, double (&phi)(double), double tn,  double dx, double dy,double dt);
+void remplissageA(vector<vector<double>>& A,double dx,double dy,double dt, int Nx, int Ny);
 
 
 
 
 
-int main() // Affichage de la matrice pour vérification 
+int main() // Affichage de la matrice pour vérification
 {
-  remplissageA(A,dx,dy,dt,Nx,Ny); 
+  remplissageA(A,dx,dy,dt,Nx,Ny);
 
 
   for (int i=0; i<=A.size()-1; i++)
@@ -118,7 +139,7 @@ void un_pas_de_temps(vector<double> Tn,vector<vector<double>> A, double (&phi)(d
 void remplissageA(vector<vector<double>>& A,double dx,double dy,double dt, int Nx, int Ny)
 {
 
-  A.resize(Nx*Ny); 
+  A.resize(Nx*Ny);
   for (int i=1; i<=A.size()-1; i++)//premiere sous et sur diagonale
     {
       (A[i-1]).resize(Nx,0.0);
@@ -130,13 +151,13 @@ void remplissageA(vector<vector<double>>& A,double dx,double dy,double dt, int N
 
     }
 
-  for (int i=1; i<=A.size()-Nx; i++) //troisieme sous et sur diagonale 
+  for (int i=1; i<=A.size()-Nx; i++) //troisieme sous et sur diagonale
     {
       A[i-1+Nx][i-1]=-K*dt/pow(dy,2);
       A[i-1][i-1+Nx]=-K*dt/pow(dy,2);
     }
 
-  for (int i=1; i<=A.size(); i++) // diagonale principale 
+  for (int i=1; i<=A.size(); i++) // diagonale principale
     {
       if ((i==1) || (i==Nx) || (i==Nx*Ny) || (i==Nx*Ny-Nx+1))
 	{

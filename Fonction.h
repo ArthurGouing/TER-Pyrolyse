@@ -9,4 +9,4 @@ string Sauvegarde_tout_le_maillage(string name);
 string Sauvegarde_colonne(string name, int k);
 
 //créé le fichier CommandGnuplot.txt pour avoir juste à faire load CommandGnuplot dans CommandGnuplot
-void Fichier_Gnuplot(string cas);
+void Fichier_Gnuplot(string name, string cas, int smooth);
