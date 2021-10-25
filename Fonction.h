@@ -13,6 +13,6 @@ string Sauvegarde_colonne(string name, int k);
 void Fichier_Gnuplot(string name, int i, int smooth);
 
 //Appel des fonctions: remplissage A et b?
-void un_pas_de_temps(vector<double>& Tn,vector<vector<double>> A, double (&phi)(double), double tn,  double dx, vector<double> dy,double dt);
+void un_pas_de_temps(vector<double>& Tn,vector<vector<double>> A, double (&phi)(double), double tn,  double dx, vector<double> dy,double dt, int Nx, int Ny);
 void remplissageA(vector<vector<double>>& A,double dx,vector<double> dy,double dt, int Nx, int Ny);
 //void remplissageb

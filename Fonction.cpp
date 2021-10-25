@@ -103,21 +103,24 @@ void Fichier_Gnuplot(string name ,int i, int smooth) // cas = "1D" ou "2D"
 // INITIALISATION ET REMPLISSAGE DE A + UN PAS DE TEMPS
 
 
-void un_pas_de_temps(vector<double>& Tn,vector<vector<double>> A, double (&phi)(double), double tn,  double dx, vector<double> dy,double dt) // On considère K une variable globale
+void un_pas_de_temps(vector<double>& Tn,vector<vector<double>> A, double (&phi)(double), double tn,  double dx, vector<double> dy,double dt, int Nx, int Ny) // On considère K une variable globale
 {
-     //Déclaration de Nx et Ny
-    int Nx,Ny;
-    double K;
+  double K=1.;
   for (int i=Nx*(Ny-1)+1; i<=Nx*Ny; i++)
     {
+      //cout << "la valeur de (dt/dy[(i-1)/Nx])*K*phi(tn+dt)-K*dt/pow(dx,2) " << (dt/dy[(i-1)/Nx])*K*phi(tn+dt)-K*dt/pow(dx,2) << endl;
+      //cout << "phi(tn+dt)" << phi(tn+dt) << endl;
       Tn[i-1]=Tn[i-1]+(dt/dy[(i-1)/Nx])*K*phi(tn+dt)-K*dt/pow(dx,2);
     }
+  //Display_vect(Tn);
   // Tn=resolutionsystlin(A,Tn);
     //vector<vector<double>> M(Nx*Ny);
   vector<vector<double>> M; // Matrice abritant L et U.
   vector<double> Tnplusun(Tn.size());
+  cout << "yes1" << endl;
   Decomposition_LU(A,M);
   Resolution_LU(M,Tn,Tnplusun);
+  cout << "yes2" << endl;
   Tn=Tnplusun;
 }
 

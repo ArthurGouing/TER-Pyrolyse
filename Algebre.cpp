@@ -64,7 +64,7 @@ void Resolution_LU(vector<vector<double>> &M, vector<double> b , vector<double> 
 	  }
     }
   cout << "affichage du vecteur y de Ly=b :" << endl;
-  Display_vect(x);
+  //Display_vect(x);
 
   //calcul de x
   x[n-1]=x[n-1]/M[n-1][n-1];
@@ -77,5 +77,5 @@ void Resolution_LU(vector<vector<double>> &M, vector<double> b , vector<double> 
       x[i] = x[i]/M[i][i];
     }
   cout << "affichage du vecteur x de LUx=b :" << endl;
-  Display_vect(x);
+  //Display_vect(x);
 }

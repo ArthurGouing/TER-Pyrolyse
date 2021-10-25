@@ -99,24 +99,15 @@ using namespace std;
 
 double flux(double t)
 {
-    int N,tf;
-  double dt=tf/N;
-  for(int i=0;i<N;i++)
-    {
-      t=i*dt;
-   
-      if(t<=50.)
+  if(t<=50.)
     {
       return 10000.*t;
     }
         
-      else
+  else
     {
       return  500000.-9000.*(t-50.);
     }
-    }
-
-  return 0;
 }
 
 
