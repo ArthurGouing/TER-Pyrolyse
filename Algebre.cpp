@@ -1,6 +1,6 @@
 #include <iostream>
 #include <vector>
-
+# include "Algebre.h"    //On vient de le mettre
 using namespace std;
 
 
