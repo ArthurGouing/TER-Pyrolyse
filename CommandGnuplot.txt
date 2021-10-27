@@ -1,9 +1,0 @@
-set term png
-set output 'Resultat.png'
-set view map
-set title 'Titre'
-set xlabel 'Position x'
-set ylabel 'Position y'
-set palette rgbformulae 22,13,-31
-set pm3d map
-plot 'Resultat/solution.txt' with image 
