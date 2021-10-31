@@ -13,87 +13,95 @@ using namespace std;
 
 
 
-/*      FONCTION D ECRITURE DANS UN FICHIER   ( PAS TESTER )  */
+/*      FONCTION D ECRITURE DANS UN FICHIER    *///Tester et valider
 
 
 //Sauvegarde dans un fichier l'ensemble des cellules pour un instant donné
-string Sauvegarde_tout_le_maillage(string name , vector<double> T, int Nx, int Ny)
+string Sauvegarde_tout_le_maillage(string name , vector<double> T, int Nx, int Ny, double dx, double dy)
 {
   ofstream flux;
   string a("Resultat/"+name+".txt");
-  flux.open(a); // il faut fermer le flux ? "REPONSE OUI"
-    if (flux)
+  flux.open(a);
+  if (flux)
     {
+      flux << "# x  y  T(x,y)" << endl;
+      for (int i = 0; i < T.size(); i++) 
+	{
+	  if (i%Nx == 0)
+	    {
+	      flux << endl; // il faut sauter une ligne quand on change de lignes pour splot
+	    }
+	  flux << /*x : reste de la division i/nx*/ (i%Nx)*dx << " " << /*y : partie entière de i/nx*/ floor(i/Nx)*dy  << " "<< T[i] << endl;
+	}
 
-  for (int i = 0; i < T.size(); i++)  // T en argument ou pas besoin ? "T EN ARGUMENT OUI"
-  {
-    //cout << i << endl;
-    if (i%Nx == 0)
-    {
-      flux << endl; // il faut sauter une ligne quand on change de lignes pour splot
     }
-    flux << /*x : reste de la division i/nx*/ i%Nx << " " << /*y : partie entière de i/ny*/ i/Ny << " "<< T[i] << endl;
-      }
-
-  }
-    flux.close();
-    return a;
+  flux.close();
+  return a;
 }
 
 //Sauvegarde dans un fichier les cellules qui sont sur la colonne k pour un instant donné
-string Sauvegarde_colonne(string name, int k,vector<double> T) // utilise T, Nx et Ny
+string Sauvegarde_colonne(string name, int k,vector<double> T, int Nx, int Ny, double dy) // utilise T, Nx et Ny
 {
-  int Nx,Ny;
   ofstream flux;
   string a("Resultat/"+name+".txt");
-  flux.open(a); // il faut fermer le flulx ?
-  for (int i = 0; i < Ny; i++) // on parcour la colonne k du maillage // verif les derrnier terms
-  {
-    flux << i << " " << T[k+Nx*i] << endl; // T=(k,i)
-  }
+  flux.open(a);
+  if (flux)
+    {
+      flux << "# y  T("<< k <<",y)" << endl;
+      for (int i = 0; i < Ny; i++) // on parcour la colonne k du maillage
+	{
+	  flux << i*dy << " " << T[k+Nx*i] << endl; // T=(k,i)
+	}
+    }
+  else
+    {
+      cout << "Le fux ne s'ouvre pas"<< endl;
+    }  //flux.close();
   return a;
 }
 
 // Créé un fichier de command gnuplot qui affiche la fonction name
 //void Fichier_Gnuplot(string name ,string cas, int smooth) // cas = "1D" ou "2D"
-void Fichier_Gnuplot(string name ,int i, int smooth) // cas = "1D" ou "2D"
+void Fichier_Gnuplot(string name ,int i, int smooth) // cas = 1 ou 2 // smooth = 1 si on active l'interpolation pour le plot de la solution
 {
   ofstream flux;
-    flux.open("CommandGnuplot.txt");
-  if (flux) // il parait qu'il en faut un
-  {
-    switch (i)
+  flux.open("CommandGnuplot.txt");
+  if (flux) 
     {
-      //case "1D":
-        case 1:
+      switch (i)
+	{
+	  //case "1D":
+	case 1:
+	  //flux << "set term png" << endl;
+	  //flux << "set output 'Resultat.png'" << endl;
+	  flux << "set title 'Titre'" << endl;
+	  flux << "set xlabel 'Position y'" << endl;
+	  flux << "set ylabel 'Température'" << endl;
+	  flux << "plot '"+name+"' using 1:2 with lines" << endl; // plot classique de  courbe (cas 1D)
+	  break;
 
-      flux << "set title 'Titre'" << endl;
-      flux << "set xlabel 'Position y'" << endl;
-      flux << "set ylabel 'Température'" << endl;
-      flux << "plot '"+name+"' using 1:2 with lines" << endl; // plot classique de  courbe (cas 1D)
-      break;
+	case 2:
+	  //flux << "set term png" << endl;
+	  //flux << "set output 'Resultat.png'" << endl;
 
-      case 2:
-      flux << "set term png" << endl;
-      flux << "set output 'Resultat.png'" << endl;
-
-      flux << "set view map" << endl; //avec un splot, ou map 2D (cas 2D).
-      flux << "set title 'Titre'" << endl;
-      flux << "set xlabel 'Position x'" << endl;
-      flux << "set ylabel 'Position y'" << endl;
-      flux << "set palette rgbformulae 22,13,-31" << endl;
-      if (smooth == 1)
-      {
-        flux << "set pm3d map interpolate 0,0" << endl;
-      }
-      else
-      {
-        flux << "set pm3d map" << endl;
-      }
-      flux << "plot 'Resultat/"+name+".txt' with image " << endl;
-      break;
+	  flux << "set view map" << endl; //avec un splot, ou map 2D (cas 2D).
+	  flux << "set title 'Titre'" << endl;
+	  flux << "set xlabel 'Position x'" << endl;
+	  flux << "set ylabel 'Position y'" << endl;
+	  flux << "set palette rgbformulae 22,13,-31" << endl;
+	  if (smooth == 1)
+	    {
+	      flux << "set pm3d map interpolate 0,0" << endl;
+	    }
+	  else
+	    {
+	      flux << "set pm3d map" << endl;
+	    }
+	  flux << "plot '"+name+"' with image " << endl;
+	  break;
+	}
     }
-  }
+  flux.close();
 }
 // T(x,y) = T(x + Nx*y)
 
@@ -110,17 +118,15 @@ void un_pas_de_temps(vector<double>& Tn,vector<vector<double>> A, double (&phi)(
     {
       //cout << "la valeur de (dt/dy[(i-1)/Nx])*K*phi(tn+dt)-K*dt/pow(dx,2) " << (dt/dy[(i-1)/Nx])*K*phi(tn+dt)-K*dt/pow(dx,2) << endl;
       //cout << "phi(tn+dt)" << phi(tn+dt) << endl;
-      Tn[i-1]=Tn[i-1]+(dt/dy[(i-1)/Nx])*K*phi(tn+dt)-K*dt/pow(dx,2);
+      Tn[i-1]=Tn[i-1]+(dt/dy[(i-1)/Nx])*K*phi(tn+dt);
     }
   //Display_vect(Tn);
   // Tn=resolutionsystlin(A,Tn);
     //vector<vector<double>> M(Nx*Ny);
   vector<vector<double>> M; // Matrice abritant L et U.
   vector<double> Tnplusun(Tn.size());
-  cout << "yes1" << endl;
   Decomposition_LU(A,M);
   Resolution_LU(M,Tn,Tnplusun);
-  cout << "yes2" << endl;
   Tn=Tnplusun;
 }
 
