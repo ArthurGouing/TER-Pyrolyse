@@ -1,12 +1,14 @@
 #include <iostream>
-#include <iostream>
 #include <string>
 #include <cmath>
 #include <vector>
 #include <fstream>
-#include "Initialisation.h"
-# include "Fonction.h"
-#include "Algebre.h"
+#include <stdio.h>
+#include "SparseLU"   
+#include "OrderingMethods"
+#include "Initialisation.h" 
+#include "Fonction.h"
+using namespace Eigen;
 using namespace std;
 
 int main()
@@ -15,12 +17,12 @@ int main()
   /*        INITIALISATION        */
 
   //Init des constantes
-  double a(1000.), TA(6000.), rho_v(1500.), rho_p(1000.), tf/*(100.)*/, T_init(283.),C_p(1000.), lambda(1.),lambda_v(1.), K(1.), dx(4.*pow(10,-5)), dt(0.1);
+  double a(1000.), TA(6000.), rho_v(1500.), rho_p(1000.), tf/*(100.)*/, T_init(283.),C_p(1000.), lambda(1.),lambda_v(1.), K(1./150000), dx(4.*pow(10,-4)), dt(0.1);
 
   cout << "tf ?" << endl;
   cin >> tf ;
 
-  int Nx(5), Ny(15);
+  int Nx(125), Ny(250);
   vector<double> dy(Ny, 4.*pow(10,-5));
   // dy.resize(Ny); //Nx*Ny
   // for(int i=0;i<dy.size();i++)
@@ -32,11 +34,30 @@ int main()
   dt = tf/int(ceil(tf/dt));
 
   //Init de A
-  vector<vector<double>> A(Nx*Ny,vector<double>(Nx*Ny,0.0));
-  remplissageA( A, dx, dy, dt,Nx, Ny);
+  //vector<vector<double>> A(Nx*Ny,vector<double>(Nx*Ny,0.0));
+  SparseMatrix<double> A(Nx*Ny,Nx*Ny);           
+  vector<Triplet<double>> triplets; 
+  remplissageA(triplets, dx, dy, dt, Nx, Ny);              // pour le remplissage d'une matrice Sparse il y a 
+  A.setFromTriplets(triplets.begin(), triplets.end());     //besoin d'utiliser un triplets pour optimisation
+  //cout << A << endl;
+
+  //Init du solveur
+  SparseLU<SparseMatrix<double>, COLAMDOrdering<int> > solver;
+  // Compute the ordering permutation vector from the structural pattern of A
+  solver.analyzePattern(A); 
+  // Compute the numerical factorization 
+  solver.factorize(A);
 
   //Init de Tn
-  vector<double> Tn(Nx*Ny,293.);
+  VectorXd Tn(Nx*Ny);
+  for (int i=0 ; i<Nx*Ny ; i++)
+    {
+      Tn.coeffRef(i) =293;          //aucune idée de comment remplir ce truc sinon
+    }
+  //cout << Tn << endl;
+  
+  VectorXd Tnplusun(Tn.size());
+
 
   // On regarde les parametres de base
   cout << "dt : " << dt << endl;
@@ -54,7 +75,9 @@ int main()
   for(int i=0;i<tf/dt+dt;i++)
     {
       tn=i*dt;
-      un_pas_de_temps(Tn,A,flux,tn,dx,dy,dt,Nx,Ny);
+      un_pas_de_temps(Tn,flux,tn,dx,dy,dt,Nx,Ny);
+      Tnplusun = solver.solve(Tn);
+      Tn = Tnplusun;
     }
 
   cout << "temp finale : "<< tf <<endl;
@@ -62,7 +85,7 @@ int main()
 
 
   
-        /*       SAVE SOLUTION        */
+  /*       SAVE SOLUTION        */
 
   string results, name="solution"; //Mettre le nom du fichier
     

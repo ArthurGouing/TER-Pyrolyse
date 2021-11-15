@@ -1,12 +1,15 @@
-# include <iostream>
-# include <string>
-# include <cmath>
-#include <vector>
+#include <iostream>
+#include <string>
+#include <cmath>
+//#include <vector>
 #include <fstream>
 #include <stdio.h>
-//# include "Initialisation.h"
+#include "Initialisation.h"
 #include "Fonction.h"
-#include"Algebre.h"
+#include "SparseLU"
+
+//#include"Algebre.h"
+using namespace Eigen;
 using namespace std;
 
 
@@ -17,7 +20,7 @@ using namespace std;
 
 
 //Sauvegarde dans un fichier l'ensemble des cellules pour un instant donné
-string Sauvegarde_tout_le_maillage(string name , vector<double> T, int Nx, int Ny, double dx, double dy)
+string Sauvegarde_tout_le_maillage(string name , VectorXd& T, int Nx, int Ny, double dx, double dy)
 {
   ofstream flux;
   string a("Resultat/"+name+".txt");
@@ -40,7 +43,7 @@ string Sauvegarde_tout_le_maillage(string name , vector<double> T, int Nx, int N
 }
 
 //Sauvegarde dans un fichier les cellules qui sont sur la colonne k pour un instant donné
-string Sauvegarde_colonne(string name, int k,vector<double> T, int Nx, int Ny, double dy) // utilise T, Nx et Ny
+string Sauvegarde_colonne(string name, int k, VectorXd& T, int Nx, int Ny, double dy) // utilise T, Nx et Ny
 {
   ofstream flux;
   string a("Resultat/"+name+".txt");
@@ -111,9 +114,9 @@ void Fichier_Gnuplot(string name ,int i, int smooth) // cas = 1 ou 2 // smooth =
 // INITIALISATION ET REMPLISSAGE DE A + UN PAS DE TEMPS
 
 
-void un_pas_de_temps(vector<double>& Tn,vector<vector<double>> A, double (&phi)(double), double tn,  double dx, vector<double> dy,double dt, int Nx, int Ny) // On considère K une variable globale
+void un_pas_de_temps(VectorXd& Tn, double (&phi)(double), double tn,  double dx, vector<double> dy,double dt, int Nx, int Ny) // On considère K une variable globale
 {
-  double K=1.;
+  double K=1./150000.;
   for (int i=Nx*(Ny-1)+1; i<=Nx*Ny; i++)
     {
       //cout << "la valeur de (dt/dy[(i-1)/Nx])*K*phi(tn+dt)-K*dt/pow(dx,2) " << (dt/dy[(i-1)/Nx])*K*phi(tn+dt)-K*dt/pow(dx,2) << endl;
@@ -122,56 +125,52 @@ void un_pas_de_temps(vector<double>& Tn,vector<vector<double>> A, double (&phi)(
     }
   //Display_vect(Tn);
   // Tn=resolutionsystlin(A,Tn);
-    //vector<vector<double>> M(Nx*Ny);
-  vector<vector<double>> M; // Matrice abritant L et U.
-  vector<double> Tnplusun(Tn.size());
-  Decomposition_LU(A,M);
-  Resolution_LU(M,Tn,Tnplusun);
-  Tn=Tnplusun;
+  //vector<vector<double>> M(Nx*Ny);
+  
 }
 
 
 
-void remplissageA(vector<vector<double>>& A,double dx,vector<double> dy,double dt, int Nx, int Ny) 
+void remplissageA(vector<Triplet<double>>& triplets,double dx,vector<double> dy,double dt, int Nx, int Ny) 
 
 {
-    double K=1.;
+    double K=1./150000.;
 
-  for (int i=1; i<=A.size()-1; i++)//premiere sous et sur diagonale
+  for (int i=1; i<=Nx*Ny-1; i++)//premiere sous et sur diagonale
     {
       if (i%Nx !=0)
     
 	{
-	  A[i-1][i]=-K*dt/pow(dx,2);
-	  A[i][i-1]=-K*dt/pow(dx,2);
+	  triplets.push_back({i-1,i,-K*dt/pow(dx,2)});
+	  triplets.push_back({i,i-1,-K*dt/pow(dx,2)});
 	}
     }
-  for (int i=1; i<=A.size()-Nx; i++) //troisieme sous et sur diagonale
+  for (int i=1; i<=Nx*Ny-Nx; i++) //troisieme sous et sur diagonale
     {
-      A[i-1+Nx][i-1]=-K*dt/pow(dy[(i-1+Nx)/Nx],2);
-      A[i-1][i-1+Nx]=-K*dt/pow(dy[(i-1)/Nx],2);
+      triplets.push_back({i-1+Nx,i-1,-K*dt/pow(dy[(i-1+Nx)/Nx],2)});
+      triplets.push_back({i-1,i-1+Nx,-K*dt/pow(dy[(i-1)/Nx],2)});
     }
     cout<<"1"<<endl;
-  for (int i=1; i<=A.size(); i++) // diagonale principale
+  for (int i=1; i<=Nx*Ny; i++) // diagonale principale
     {
       if ((i==1) || (i==Nx) || (i==Nx*Ny) || (i==Nx*Ny-Nx+1))
 	{
-	  A[i-1][i-1]=1.+K*dt*((1./pow(dx,2))+(1./pow(dy[(i-1)/Nx],2)));
+	  triplets.push_back({i-1,i-1,1.+K*dt*((1./pow(dx,2))+(1./pow(dy[(i-1)/Nx],2)))});
 	}
 
       else if (((i>=2) && (i<=Nx-1)) || ((i>=Nx*Ny-Nx+2) && (i<=Nx*Ny-1)))
 	{
-	  A[i-1][i-1]=1.+K*dt*((2/pow(dx,2))+(1./pow(dy[(i-1)/Nx],2)));
+	  triplets.push_back({i-1,i-1,1.+K*dt*((2/pow(dx,2))+(1./pow(dy[(i-1)/Nx],2)))});
 	}
 
       else if ((i%Nx==1) || (i%Nx==0))
 	{
-	  A[i-1][i-1]=1.+K*dt*((1./pow(dx,2))+(2/pow(dy[(i-1)/Nx],2)));
+	  triplets.push_back({i-1,i-1,1.+K*dt*((1./pow(dx,2))+(2/pow(dy[(i-1)/Nx],2)))});
 	}
 
       else
 	{
-	  A[i-1][i-1]=1.+2*K*dt*((1./pow(dx,2))+(1./pow(dy[(i-1)/Nx],2)));
+	  triplets.push_back({i-1,i-1,1.+2*K*dt*((1./pow(dx,2))+(1./pow(dy[(i-1)/Nx],2)))});
 	}
 
     }
